@@ -65,8 +65,8 @@
             newsTitlesArray.forEach(title => {
                 const listItem = document.createElement('li');
                 const link = document.createElement('a');
-                const textdata = title['summary'] || apis[title['newstype']] + ' ' + title['url'];
-                link.textContent = textdata;
+                const textdata = title['summary'] || title['url'];
+                link.textContent = apis[title['newstype']] + ' '+ textdata;
                 link.href = title['url'].indexOf('http') === 0 ? title['url'] : '#';
                 link.target = '_blank';
                 link.rel = 'noopener noreferrer nofollow';
