@@ -1,108 +1,100 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Top News Today - Your all in one Tech & Sec news</title>
-<style>
-body {
-font-family: Arial, sans-serif;
-margin: 0;
-padding: 0;
-}
-a {
-    text-decoration: none;
-}
-a:link{
-    text-decoration: none;
-    color: rgb(61, 61, 61);
-}
-
-h1 {
-text-align: center;
-}
-
-ul {
-list-style-type: none;
-padding: 0;
-}
-
-li {
-padding: 10px;
-border-bottom: 1px solid #ccc;
-}
-
-@media only screen and (max-width: 600px) {
-li {
-font-size: 14px;
-}
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="最新科技与安全新闻，每日头条新闻汇总，为您提供一个全面的新闻资讯平台。">
+    <meta name="keywords" content="科技新闻, 安全新闻, 每日头条, 新闻汇总, 新闻资讯">
+    <meta name="author" content="Top News Today">
+    <title>今日头条新闻 - 全面的科技与安全新闻资讯</title>
+    <link rel="canonical" href="https://news.tcp.im/">
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        a {
+            text-decoration: none;
+            color: #3d3d3d;
+        }
+        h1 {
+            text-align: center;
+            font-size: 24px;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            padding: 10px;
+            border-bottom: 1px solid #ccc;
+        }
+        @media only screen and (max-width: 600px) {
+            li {
+                font-size: 14px;
+            }
+        }
+    </style>
 </head>
 <body>
 
-<ul id="newsList">
-<!-- News titles will be dynamically added here -->
-</ul>
+    <header>
+        <h1>今日头条新闻 - 全面的科技与安全新闻资讯</h1>
+    </header>
 
-<div>You have spent <label id="time">0</label> min(s) on this site.</div>
+    <main>
+        <ul id="newsList">
+            <!-- 新闻标题将动态添加到这里 -->
+        </ul>
+    </main>
 
-<script>
-// News titles array
-const newsTitles = [
-];
+    <footer>
+        <div>您在本站已花费 <span id="time">0</span> 分钟。</div>
+    </footer>
 
-// Function to add news titles to the list
-function addNewsTitles(newsTitlesArray, apis) {
-const newsList = document.getElementById('newsList');
-newsTitlesArray.forEach(title => {
-const listItem = document.createElement('li');
+    <script>
+        // 新闻标题数组
+        const newsTitles = [
+            // 数据将动态加载
+        ];
 
-const link = document.createElement('a');
-const textdata = title['summary']
-if(textdata.length == 0){
-    link.textContent = apis[title['newstype']]+' '+title['url'];
-}
-else{
-    link.textContent = apis[title['newstype']]+' '+textdata;
-}
+        // 添加新闻标题到列表的函数
+        function addNewsTitles(newsTitlesArray, apis) {
+            const newsList = document.getElementById('newsList');
+            newsTitlesArray.forEach(title => {
+                const listItem = document.createElement('li');
+                const link = document.createElement('a');
+                const textdata = title['summary'] || apis[title['newstype']] + ' ' + title['url'];
+                link.textContent = textdata;
+                link.href = title['url'].indexOf('http') === 0 ? title['url'] : '#';
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer nofollow';
+                listItem.appendChild(link);
+                newsList.appendChild(listItem);
+            });
+        }
 
+        // 调用函数添加新闻标题
+        const apis = {1: "[HN]", 2: "[RN]", 3: '[GT]', 4: "[H1]", 5: '[XZ]', 6: "[SB]", 7: '[SW]', 8: "[ST]"};
+        const apidomain = "https://topnews-4tk.pages.dev";
 
-if(title['url'].indexOf('http')==0){
-    link.href=title['url']
-}
-else{
-    link.href='#';
-}
+        fetch(apidomain + '/today')
+            .then(response => response.json())
+            .then(data => {
+                if (data.length === 0) {
+                    window.location.href = "/topnews";
+                }
+                addNewsTitles(data, apis);
+            });
 
-link.target='_blank';
-link.setAttribute('rel', 'nofollow');
-listItem.appendChild(link);
-newsList.appendChild(listItem);
-});
-}
+    </script>
 
-// Call the function to add news titles
-
-const apis={1:"[HN]",2:"[RN]",3:'[GT]',4:"[H1]",5:'[XZ]',6:"[SB]",7:'[SW]',8:"[ST]"}
-const apidomain = "https://topnews-4tk.pages.dev"
-  
-fetch(apidomain + '/today').then(response=>{
-    return response.json()
-}).then(data =>{
-    if(data.length == 0){
-        location.href="/topnews";
-    }
-    addNewsTitles(data, apis)
-})
-
-</script>
-
-<script>
-    setInterval(function(){
-        const timespent = parseInt(document.getElementById('time').innerText);
-        document.getElementById('time').innerText = timespent + 1;
-    },60000)
-</script>
+    <script>
+        setInterval(function () {
+            const timespent = parseInt(document.getElementById('time').innerText, 10);
+            document.getElementById('time').innerText = timespent + 1;
+        }, 60000);
+    </script>
 </body>
 </html>
