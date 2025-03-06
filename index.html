@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="最新科技与安全新闻，每日头条新闻汇总，为您提供一个全面的新闻资讯平台。">
+    <meta name="keywords" content="科技新闻, 安全新闻, 每日头条, 新闻汇总, 新闻资讯">
+    <meta name="author" content="Top News Today">
+    <title>今日头条新闻 - 全面的科技与安全新闻资讯</title>
+    <link rel="canonical" href="https://news.tcp.im/">
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9; /* 米白色背景 */
+            color: #555555; /* 深棕色文字 */
+            overflow-x: hidden;
+            transition: background-color 0.3s ease;
+        }
+        a {
+            text-decoration: none;
+            color: #007acc; /* 浅蓝色链接 */
+            transition: color 0.3s ease;
+        }
+        a:hover {
+            color: #0056b3; /* 悬停时加深颜色 */
+        }
+        header {
+            background-color: #ffffff; /* 白色背景 */
+            padding: 10px 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* 减弱阴影 */
+            text-align: center;
+            transition: opacity 0.3s ease;
+        }
+        h1 {
+            font-size: 24px;
+            margin: 0;
+            color: #333333; /* 更深的文字颜色 */
+        }
+        main {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            position: relative;
+            height: calc(100vh - 140px);
+            overflow-y: auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+        li {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            background-color: #ffffff;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            transition: transform 0.2s ease;
+        }
+        li:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+        }
+        footer {
+            background-color: #ffffff; /* 白色背景 */
+            padding: 10px 20px;
+            box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1); /* 减弱阴影 */
+            text-align: center;
+            position: fixed;
+            width: 100%;
+            bottom: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .pagination-container {
+            position: fixed;
+            right: 20px;
+            bottom: 20px;
+            z-index: 1000;
+            background-color: #ffffff;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .pagination {
+            display: flex;
+            align-items: center;
+        }
+        .pagination button {
+            background-color: #4caf50; /* 绿色按钮 */
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            margin: 0 5px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+        .pagination button:hover {
+            background-color: #45a049; /* 悬停时加深颜色 */
+        }
+        .pagination span {
+            font-size: 16px;
+            color: #555555; /* 使用更深的文字颜色 */
+        }
+        @media only screen and (max-width: 600px) {
+            h1 {
+                font-size: 20px;
+            }
+            li {
+                padding: 10px;
+            }
+            footer {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .pagination-container {
+                right: 10px;
+                bottom: 10px;
+            }
+            .pagination {
+                flex-direction: column;
+            }
+            .pagination button {
+                margin: 5px 0;
+            }
+        }
+        @media only screen and (min-height: 800px) {
+            main {
+                min-width: 850px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header id="header">
+        <h1>今日头条新闻 - 全面的科技与安全新闻资讯</h1>
+    </header>
+
+    <main>
+        <ul id="newsList">
+            <!-- 新闻标题将动态添加到这里 -->
+        </ul>
+    </main>
+
+    <footer id="footer">
+        <div>您在本站已花费 <span id="time">0</span> 分钟。</div>
+    </footer>
+
+    <div class="pagination-container">
+        <div class="pagination">
+            <button id="prevPage" onclick="changePage(-1)" disabled>上一页</button>
+            <span id="pageInfo"></span>
+            <button id="nextPage" onclick="changePage(1)">下一页</button>
+        </div>
+    </div>
+
+    <script>
+        // 新闻标题数组
+        let newsTitles = [];
+        const pageSize = 10; // 每页显示的新闻数量
+        let currentPage = 1;
+
+        // 添加新闻标题到列表的函数
+        function addNewsTitles(newsTitlesArray, apis) {
+            const newsList = document.getElementById('newsList');
+            newsList.innerHTML = ''; // 清空现有内容
+            const startIndex = (currentPage - 1) * pageSize;
+            const endIndex = startIndex + pageSize;
+            const pageData = newsTitlesArray.slice(startIndex, endIndex);
+
+            pageData.forEach(title => {
+                const listItem = document.createElement('li');
+                const link = document.createElement('a');
+                const textdata = title['summary'] || title['url'];
+                link.textContent = apis[title['newstype']] + ' ' + textdata;
+                link.href = title['url'].indexOf('http') === 0 ? title['url'] : '#';
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer nofollow';
+                listItem.appendChild(link);
+                newsList.appendChild(listItem);
+            });
+
+            updatePagination();
+        }
+
+        // 更新分页信息和按钮状态
+        function updatePagination() {
+            const totalPages = Math.ceil(newsTitles.length / pageSize);
+            document.getElementById('pageInfo').textContent = `第 ${currentPage} 页 / 共 ${totalPages} 页`;
+            document.getElementById('prevPage').disabled = currentPage === 1;
+            document.getElementById('nextPage').disabled = currentPage === totalPages;
+
+            // 隐藏或显示 header 和 footer
+            if (currentPage > 1) {
+                document.getElementById('header').style.opacity = 0;
+            } else {
+                document.getElementById('header').style.opacity = 1;
+            }
+        }
+
+        // 切换页面
+        function changePage(direction) {
+            currentPage += direction;
+            addNewsTitles(newsTitles, apis);
+        }
+
+        // 处理鼠标滚轮事件
+        document.addEventListener('wheel', function(event) {
+            if (event.deltaY > 0 && currentPage < Math.ceil(newsTitles.length / pageSize)) {
+                changePage(1);
+            } else if (event.deltaY < 0 && currentPage > 1) {
+                changePage(-1);
+            }
+        });
+
+        // 阻止 newsList 内的滚动事件冒泡
+        document.getElementById('newsList').addEventListener('wheel', function(event) {
+            event.stopPropagation();
+        });
+
+        // 调用函数添加新闻标题
+        const apis = {1: "[HN]", 2: "[RN]", 3: '[GT]', 4: "[H1]", 5: '[XZ]', 6: "[SB]", 7: '[SW]', 8: "[ST]", 9: "[BT]", 10:"[HX]"};
+        const apidomain = "https://topnews-4tk.pages.dev";
+
+        fetch(apidomain + '/today')
+            .then(response => response.json())
+            .then(data => {
+                if (data.length === 0) {
+                    window.location.href = "/topnews";
+                }
+                newsTitles = data;
+                addNewsTitles(newsTitles, apis);
+            })
+            .catch(error => console.error('Error fetching the news:', error));
+
+        setInterval(function () {
+            const timespent = parseInt(document.getElementById('time').innerText, 10);
+            document.getElementById('time').innerText = timespent + 1;
+        }, 60000);
+    </script>
+</body>
+</html>
+
+
+
