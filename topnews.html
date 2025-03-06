@@ -85,7 +85,7 @@ newsList.appendChild(listItem);
 
 // Call the function to add news titles
 const apidomain = "https://topnews-4tk.pages.dev"
-const apis={'/hnews':"[HN]",'/rd':"[RN]",'/g2':'[GT]','/h1':"[H1]",'/xz':'[XZ]','/sb':"[SB]",'/sw':'[SW]','/st':"[ST]"}
+const apis={'/hnews':"[HN]",'/rd':"[RN]",'/g2':'[GT]','/h1':"[H1]",'/xz':'[XZ]','/sb':"[SB]",'/sw':'[SW]','/st':"[ST]",'/bt':"[BT]",'/hx':"[HX]"}
 
 Object.entries(apis).forEach(([api,site])=>{
     fetch(apidomain + api).then(response=>{
