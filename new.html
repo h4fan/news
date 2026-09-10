@@ -9,7 +9,6 @@
     <meta name="theme-color" content="#ffffff">
     <title>今日头条新闻 · 前沿科技与安全视野</title>
     <link rel="canonical" href="https://news.tcp.im/">
-    <!-- 使用现代字体 & 简单图标库 (仅用unicode/emoji，无外部依赖) -->
     <style>
         * {
             margin: 0;
@@ -40,8 +39,8 @@
             font-family: system-ui, -apple-system, 'Segoe UI', 'Roboto', 'Noto Sans', 'Helvetica Neue', sans-serif;
             background: linear-gradient(145deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
             color: var(--text-primary);
-            overflow-x: hidden;
-            min-height: 100vh;
+            overflow: hidden;               /* 由 main 内部滚动 */
+            height: 100vh;
             position: relative;
         }
 
@@ -62,7 +61,22 @@
             background: #94a3b8;
         }
 
-        /* Header 毛玻璃效果 + 动感 */
+        /* ========== 顶部阅读进度条 ========== */
+        #topProgress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            width: 0%;
+            z-index: 300;
+            border-radius: 0 3px 3px 0;
+            background: linear-gradient(90deg, #2c7da0 0%, #2e7d64 60%, #52b788 100%);
+            box-shadow: 0 0 10px rgba(44, 125, 160, 0.45);
+            transition: width 0.12s linear;
+            pointer-events: none;
+        }
+
+        /* Header 毛玻璃效果 */
         header {
             background: rgba(255, 255, 255, 0.92);
             backdrop-filter: blur(12px);
@@ -70,10 +84,8 @@
             text-align: center;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02), 0 1px 0 rgba(0, 0, 0, 0.02);
             border-bottom: 1px solid rgba(255, 255, 255, 0.6);
-            position: sticky;
-            top: 0;
+            position: relative;
             z-index: 100;
-            transition: opacity 0.4s ease, transform 0.3s ease;
         }
 
         h1 {
@@ -87,15 +99,18 @@
             margin: 0;
         }
 
-        /* 主内容区域 - 优雅卡片容器 */
+        /* 主内容区域 - 内部连续滚动容器 */
         main {
             max-width: 880px;
-            margin: 2rem auto;
-            padding: 0 1.5rem;
+            margin: 1.25rem auto 0;
+            padding: 0 1.5rem 1rem;
             position: relative;
-            height: calc(100vh - 160px);
+            height: calc(100vh - 150px);
             overflow-y: auto;
+            overflow-x: hidden;
             scroll-behavior: smooth;
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
         }
 
         /* 新闻列表容器 */
@@ -106,7 +121,7 @@
             list-style: none;
         }
 
-        /* 卡片新闻项 - 新形态 */
+        /* 卡片新闻项 */
         .news-card {
             background: var(--card-bg);
             border-radius: 1.25rem;
@@ -115,6 +130,12 @@
             box-shadow: var(--shadow-sm);
             overflow: hidden;
             position: relative;
+            animation: cardIn 0.45s cubic-bezier(0.2, 0.9, 0.4, 1) backwards;
+        }
+
+        @keyframes cardIn {
+            from { opacity: 0; transform: translateY(16px); }
+            to   { opacity: 1; transform: translateY(0); }
         }
 
         .news-card:hover {
@@ -145,16 +166,16 @@
             border: 0.5px solid rgba(44, 125, 160, 0.2);
         }
 
-        /* 不同来源不同色调 (动态丰富) */
-        .news-badge[data-type="1"] { background: #eef2ff; color: #1e4a76; }
-        .news-badge[data-type="2"] { background: #e6f7f0; color: #1e6f5c; }
-        .news-badge[data-type="3"] { background: #fef3e8; color: #b45309; }
-        .news-badge[data-type="4"] { background: #f1e8fe; color: #6247aa; }
-        .news-badge[data-type="5"] { background: #ffe6e6; color: #b91c1c; }
-        .news-badge[data-type="6"] { background: #e6f2ff; color: #0369a1; }
-        .news-badge[data-type="7"] { background: #fefce8; color: #a16207; }
-        .news-badge[data-type="8"] { background: #e8f1f2; color: #2c6e6e; }
-        .news-badge[data-type="9"] { background: #ffe2f0; color: #b43b6e; }
+        /* 不同来源不同色调 */
+        .news-badge[data-type="1"]  { background: #eef2ff; color: #1e4a76; }
+        .news-badge[data-type="2"]  { background: #e6f7f0; color: #1e6f5c; }
+        .news-badge[data-type="3"]  { background: #fef3e8; color: #b45309; }
+        .news-badge[data-type="4"]  { background: #f1e8fe; color: #6247aa; }
+        .news-badge[data-type="5"]  { background: #ffe6e6; color: #b91c1c; }
+        .news-badge[data-type="6"]  { background: #e6f2ff; color: #0369a1; }
+        .news-badge[data-type="7"]  { background: #fefce8; color: #a16207; }
+        .news-badge[data-type="8"]  { background: #e8f1f2; color: #2c6e6e; }
+        .news-badge[data-type="9"]  { background: #ffe2f0; color: #b43b6e; }
         .news-badge[data-type="10"] { background: #e0f2fe; color: #0e5f8a; }
 
         .news-link {
@@ -207,64 +228,86 @@
             border-radius: 50%;
             border-top-color: var(--accent-blue);
             animation: spin 0.8s linear infinite;
-            margin-bottom: 1rem;
+        }
+        .spinner.sm {
+            width: 18px;
+            height: 18px;
+            border-width: 2px;
         }
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
 
-        /* 分页容器 - 悬浮玻璃质感 */
-        .pagination-container {
-            position: fixed;
-            right: 1.5rem;
-            bottom: 5rem;
-            z-index: 200;
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(12px);
-            border-radius: 60px;
-            padding: 0.4rem 0.6rem;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.02);
-            border: 1px solid rgba(255, 255, 255, 0.6);
-            transition: transform 0.2s;
+        .retry-btn {
+            margin-top: 1rem;
+            background: var(--accent-blue);
+            border: none;
+            color: white;
+            padding: 0.5rem 1.25rem;
+            border-radius: 2rem;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.85rem;
+            transition: background 0.2s;
         }
-        .pagination {
+        .retry-btn:hover { background: var(--accent-blue-hover); }
+
+        /* ========== 底部哨兵 / 加载更多提示 ========== */
+        .sentinel {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            justify-content: center;
+            gap: 0.6rem;
+            padding: 1.6rem 0 2.8rem;
+            font-size: 0.82rem;
+            color: var(--text-light);
+            letter-spacing: 0.2px;
         }
-        .pagination button {
-            background: white;
-            border: none;
-            font-size: 0.85rem;
+        .sentinel.done {
+            color: var(--accent-green);
             font-weight: 500;
-            padding: 0.5rem 1rem;
-            border-radius: 40px;
-            cursor: pointer;
-            color: var(--text-primary);
-            transition: all 0.2s ease;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-            font-family: inherit;
-            border: 0.5px solid #e2e8f0;
         }
-        .pagination button:not(:disabled):hover {
-            background: var(--accent-blue);
-            color: white;
-            border-color: var(--accent-blue);
-            transform: scale(0.97);
-            box-shadow: 0 2px 6px rgba(44,125,160,0.3);
-        }
-        .pagination button:disabled {
-            opacity: 0.45;
-            cursor: not-allowed;
-            background: #f1f5f9;
-        }
-        #pageInfo {
-            font-size: 0.85rem;
-            font-weight: 500;
-            background: rgba(0,0,0,0.03);
-            padding: 0.3rem 0.9rem;
-            border-radius: 30px;
+        .sentinel .spinner { flex-shrink: 0; }
+
+        /* ========== 右下角加载进度胶囊 ========== */
+        .progress-chip {
+            position: fixed;
+            right: 1.5rem;
+            bottom: 4.6rem;
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            gap: 0.55rem;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            border-radius: 60px;
+            padding: 0.45rem 0.95rem 0.45rem 0.7rem;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.02);
+            font-size: 0.72rem;
+            font-weight: 600;
             color: var(--text-secondary);
+            font-variant-numeric: tabular-nums;
+            user-select: none;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .progress-chip:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+        }
+        .chip-bar {
+            width: 52px;
+            height: 5px;
+            border-radius: 10px;
+            background: #e2e8f0;
+            overflow: hidden;
+        }
+        .chip-bar-fill {
+            height: 100%;
+            width: 0%;
+            border-radius: 10px;
+            background: linear-gradient(90deg, #2c7da0, #2e7d64);
+            transition: width 0.35s cubic-bezier(0.2, 0.9, 0.4, 1);
         }
 
         /* Footer 优雅毛玻璃 */
@@ -282,7 +325,7 @@
             align-items: center;
             font-size: 0.8rem;
             color: var(--text-secondary);
-            border-top: 1px solid rgba(255,255,255,0.8);
+            border-top: 1px solid rgba(255, 255, 255, 0.8);
             z-index: 99;
             box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.02);
         }
@@ -297,29 +340,12 @@
             opacity: 0.7;
         }
 
-        /* 滚动提示 (轻交互) */
-        .scroll-hint {
-            position: fixed;
-            bottom: 6rem;
-            left: 1rem;
-            background: rgba(0,0,0,0.55);
-            backdrop-filter: blur(4px);
-            color: white;
-            font-size: 0.7rem;
-            padding: 0.3rem 0.8rem;
-            border-radius: 30px;
-            pointer-events: none;
-            z-index: 99;
-            opacity: 0.6;
-            transition: opacity 0.3s;
-        }
-
         /* 响应式优化 */
         @media (max-width: 680px) {
             main {
-                padding: 0 1rem;
-                margin: 1rem auto;
-                height: calc(100vh - 140px);
+                padding: 0 1rem 1rem;
+                margin-top: 1rem;
+                height: calc(100vh - 138px);
             }
             .card-inner {
                 padding: 0.85rem 1rem;
@@ -335,372 +361,288 @@
             h1 {
                 font-size: 1.35rem;
             }
-            .pagination-container {
+            .progress-chip {
                 right: 1rem;
-                bottom: 4.5rem;
-                padding: 0.3rem 0.5rem;
+                bottom: 4.2rem;
+                padding: 0.4rem 0.8rem 0.4rem 0.6rem;
+                font-size: 0.68rem;
             }
-            .pagination button {
-                padding: 0.35rem 0.8rem;
-                font-size: 0.75rem;
-            }
+            .chip-bar { width: 42px; }
             footer {
                 font-size: 0.7rem;
                 padding: 0.6rem 1rem;
             }
-            .scroll-hint {
-                display: none;
-            }
+            .footer-note { display: none; }
         }
 
         @media (max-width: 480px) {
-            .pagination-container {
-                bottom: 4rem;
-            }
-            .card-inner {
-                flex-wrap: wrap;
-            }
-            .news-badge {
-                order: 1;
-            }
-            .news-link {
-                order: 2;
-                width: 100%;
-            }
-            .link-icon {
-                order: 3;
-            }
-        }
-
-        /* header 淡出效果保留原逻辑但更平滑 */
-        .header-fade-out {
-            opacity: 0 !important;
-            pointer-events: none;
-        }
-        .header-fade-in {
-            opacity: 1 !important;
+            .card-inner { flex-wrap: wrap; }
+            .news-badge { order: 1; }
+            .news-link { order: 2; width: 100%; }
+            .link-icon { order: 3; }
+            .progress-chip { bottom: 4rem; }
         }
     </style>
 </head>
 <body>
 
+<!-- 顶部阅读进度条 -->
+<div id="topProgress"></div>
+
 <header id="header">
     <h1>📰 今日头条新闻 · 科技与安全前沿</h1>
 </header>
 
-<main>
-    <ul id="newsList">
-        <!-- 动态新闻渲染位置 -->
-        <div class="loading-placeholder" id="initialLoader" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
-            <div class="spinner"></div>
-            <span>正在加载最新资讯...</span>
-        </div>
-    </ul>
+<main id="mainScroll">
+    <ul id="newsList"><!-- 动态新闻卡片渲染位置 --></ul>
+
+    <div id="stateBox"><!-- 加载 / 错误 / 空状态 --></div>
+
+    <div class="sentinel" id="sentinel" style="display:none;">
+        <div class="spinner sm"></div>
+        <span id="sentinelText">继续下滑，加载更多…</span>
+    </div>
 </main>
 
 <footer id="footer">
     <div>📖 深度视野 · 时刻洞察</div>
     <div class="time-counter">⏱️ 您已阅读 <span id="time">0</span> 分钟</div>
-    <div class="footer-note">⚡ 滚动至底/顶自动翻页</div>
+    <div class="footer-note">⚡ 持续下滑 · 自动加载</div>
 </footer>
 
-<div class="pagination-container">
-    <div class="pagination">
-        <button id="prevPage" aria-label="上一页" disabled>← 上一页</button>
-        <span id="pageInfo"></span>
-        <button id="nextPage" aria-label="下一页">下一页 →</button>
-    </div>
-</div>
-
-<div class="scroll-hint" id="scrollHint">
-    🖱️ 滚动到底部自动加载下一页
+<!-- 右下角加载进度胶囊 -->
+<div class="progress-chip" id="progressChip" title="已加载 / 总条数">
+    <div class="chip-bar"><div class="chip-bar-fill" id="chipFill"></div></div>
+    <span id="chipText">0 / 0</span>
 </div>
 
 <script>
-    // ---------- 核心数据 ----------
-    let newsTitles = [];
-    const pageSize = 10;
-    let currentPage = 1;
+    // ==================== 核心数据 ====================
+    let newsTitles = [];        // 全部新闻
+    let loadedCount = 0;        // 已渲染条数
+    const pageSize = 10;        // 每批追加条数
 
     // 新闻源映射 (保留原始缩写)
-    const apis = {1: "[HN]", 2: "[RN]", 3: '[GT]', 4: "[H1]", 5: '[XZ]', 6: "[SB]", 7: '[SW]', 8: "[ST]", 9: "[BT]", 10:"[HX]"};
+    const apis = {
+        1: "[HN]", 2: "[RN]", 3: "[GT]", 4: "[H1]", 5: "[XZ]",
+        6: "[SB]", 7: "[SW]", 8: "[ST]", 9: "[BT]", 10: "[HX]"
+    };
     const apidomain = "https://topnews-4tk.pages.dev";
 
-    // DOM 元素
+    // ==================== DOM 元素 ====================
     const newsListContainer = document.getElementById('newsList');
-    const prevBtn = document.getElementById('prevPage');
-    const nextBtn = document.getElementById('nextPage');
-    const pageInfoSpan = document.getElementById('pageInfo');
-    const headerElem = document.getElementById('header');
-    const timeSpan = document.getElementById('time');
+    const mainElem          = document.getElementById('mainScroll');
+    const stateBox          = document.getElementById('stateBox');
+    const sentinel          = document.getElementById('sentinel');
+    const sentinelText      = document.getElementById('sentinelText');
+    const topProgress       = document.getElementById('topProgress');
+    const chipFill          = document.getElementById('chipFill');
+    const chipText          = document.getElementById('chipText');
+    const timeSpan          = document.getElementById('time');
 
-    // ---------- 美化版渲染函数 (保留徽章 + 优雅卡片) ----------
-    function renderNewsList(newsArray, sourceMap) {
-        if (!newsListContainer) return;
-        const start = (currentPage - 1) * pageSize;
-        const end = start + pageSize;
-        const pageItems = newsArray.slice(start, end);
-        
-        // 清空并重新构建
-        newsListContainer.innerHTML = '';
-        
-        if (pageItems.length === 0) {
-            const emptyDiv = document.createElement('div');
-            emptyDiv.className = 'empty-placeholder';
-            emptyDiv.innerHTML = '✨ 暂无更多新闻，稍后再来看看吧～';
-            newsListContainer.appendChild(emptyDiv);
-            updatePaginationUI();
-            return;
-        }
-        
-        pageItems.forEach(item => {
-            const li = document.createElement('li');
-            li.className = 'news-card';
-            
-            const innerDiv = document.createElement('div');
-            innerDiv.className = 'card-inner';
-            
-            // 获取新闻类型标识
-            const newsTypeKey = item['newstype'];
-            const badgeText = sourceMap[newsTypeKey] || '[NEWS]';
-            // 提取标题文本（summary优先，否则url）
-            const titleText = item['summary'] || item['url'];
-            const newsUrl = (item['url'] && item['url'].indexOf('http') === 0) ? item['url'] : '#';
-            
-            // 创建徽章 (带自定义属性用于不同色彩)
-            const badgeSpan = document.createElement('span');
-            badgeSpan.className = 'news-badge';
-            badgeSpan.setAttribute('data-type', newsTypeKey || '0');
-            badgeSpan.textContent = badgeText;
-            
-            // 创建链接
-            const link = document.createElement('a');
-            link.className = 'news-link';
-            link.href = newsUrl;
-            link.target = '_blank';
-            link.rel = 'noopener noreferrer nofollow';
-            link.textContent = titleText || '阅读原文';
-            
-            // 外部箭头图标 (Unicode)
-            const iconSpan = document.createElement('span');
-            iconSpan.className = 'link-icon';
-            iconSpan.textContent = ' ↗';
-            
-            innerDiv.appendChild(badgeSpan);
-            innerDiv.appendChild(link);
-            innerDiv.appendChild(iconSpan);
-            li.appendChild(innerDiv);
-            newsListContainer.appendChild(li);
+    let observer = null;        // IntersectionObserver 实例
+    let allLoaded = false;      // 是否已全部加载
+
+    // ==================== 创建单张新闻卡片 ====================
+    function createCard(item) {
+        const li = document.createElement('li');
+        li.className = 'news-card';
+
+        const innerDiv = document.createElement('div');
+        innerDiv.className = 'card-inner';
+
+        const newsTypeKey = item['newstype'];
+        const badgeText   = apis[newsTypeKey] || '[NEWS]';
+        const titleText   = item['summary'] || item['url'] || '阅读原文';
+        const rawUrl      = item['url'] || '';
+        const newsUrl     = rawUrl.indexOf('http') === 0 ? rawUrl : '#';
+
+        // 徽章
+        const badgeSpan = document.createElement('span');
+        badgeSpan.className = 'news-badge';
+        badgeSpan.setAttribute('data-type', newsTypeKey || '0');
+        badgeSpan.textContent = badgeText;
+
+        // 链接
+        const link = document.createElement('a');
+        link.className = 'news-link';
+        link.href = newsUrl;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer nofollow';
+        link.textContent = titleText;
+
+        // 外链图标
+        const iconSpan = document.createElement('span');
+        iconSpan.className = 'link-icon';
+        iconSpan.textContent = '↗';
+
+        innerDiv.append(badgeSpan, link, iconSpan);
+        li.appendChild(innerDiv);
+        return li;
+    }
+
+    // ==================== 批量追加卡片 ====================
+    function appendBatch(startIndex, count) {
+        const slice = newsTitles.slice(startIndex, startIndex + count);
+        if (!slice.length) return 0;
+
+        const frag = document.createDocumentFragment();
+        slice.forEach((item, i) => {
+            const card = createCard(item);
+            card.style.animationDelay = Math.min(i, 8) * 38 + 'ms';
+            frag.appendChild(card);
         });
-        
-        updatePaginationUI();
-        handleHeaderFade();
+
+        newsListContainer.appendChild(frag);
+        loadedCount += slice.length;
+        updateProgressUI();
+        return slice.length;
     }
-    
-    // 更新分页按钮与页码 + 新闻数量提示
-    function updatePaginationUI() {
-        const totalPages = Math.ceil(newsTitles.length / pageSize);
-        if (totalPages === 0) {
-            pageInfoSpan.textContent = `第 0 / 0 页`;
-            prevBtn.disabled = true;
-            nextBtn.disabled = true;
+
+    // ==================== 加载下一批（连续下滑核心） ====================
+    function loadMore() {
+        if (allLoaded) return;
+        if (loadedCount >= newsTitles.length) {
+            markAllLoaded();
             return;
         }
-        pageInfoSpan.textContent = `第 ${currentPage} / ${totalPages} 页 · 共 ${newsTitles.length} 条`;
-        prevBtn.disabled = (currentPage === 1);
-        nextBtn.disabled = (currentPage === totalPages);
+        appendBatch(loadedCount, pageSize);
+        updateScrollProgress();
+        requestAnimationFrame(fillViewport);
     }
-    
-    // 处理header透明度 (滚动到第二页淡出)
-    function handleHeaderFade() {
-        if (!headerElem) return;
-        if (currentPage > 1) {
-            headerElem.classList.add('header-fade-out');
-        } else {
-            headerElem.classList.remove('header-fade-out');
+
+    // 若视口未填满，则继续追加，直到填满或数据耗尽
+    function fillViewport() {
+        while (loadedCount < newsTitles.length) {
+            const mainRect = mainElem.getBoundingClientRect();
+            const sentRect = sentinel.getBoundingClientRect();
+            // 哨兵进入视口下方 200px 缓冲区内 → 继续加载
+            if (sentRect.top >= mainRect.bottom + 200) break;
+            appendBatch(loadedCount, pageSize);
         }
+        if (loadedCount >= newsTitles.length) markAllLoaded();
+        updateScrollProgress();
     }
-    
-    // 切换页码逻辑
-    function changePage(direction) {
-        const totalPages = Math.ceil(newsTitles.length / pageSize);
-        let newPage = currentPage + direction;
-        if (newPage < 1) newPage = 1;
-        if (newPage > totalPages) newPage = totalPages;
-        if (newPage === currentPage) return;
-        currentPage = newPage;
-        renderNewsList(newsTitles, apis);
+
+    // ==================== 全部加载完成 ====================
+    function markAllLoaded() {
+        if (allLoaded) return;
+        allLoaded = true;
+        sentinel.classList.add('done');
+        sentinel.innerHTML = `🎉 已加载全部 ${newsTitles.length} 条资讯`;
+        if (observer) { observer.disconnect(); observer = null; }
+        updateScrollProgress();
     }
-    
-    // 初始化/绑定按钮事件 (避免onclick覆盖)
-    function bindPaginationEvents() {
-        if (prevBtn) {
-            prevBtn.onclick = () => changePage(-1);
-        }
-        if (nextBtn) {
-            nextBtn.onclick = () => changePage(1);
-        }
+
+    // ==================== 进度 UI 更新 ====================
+    function updateProgressUI() {
+        const total = newsTitles.length;
+        chipText.textContent = `${loadedCount} / ${total}`;
+        const pct = total ? (loadedCount / total) * 100 : 0;
+        chipFill.style.width = pct.toFixed(1) + '%';
     }
-    
-    // 滚轮切换页面 (保留原始交互但优化防抖)
-    let wheelTimeout = null;
-    function handleWheelNavigation(e) {
-        if (!newsTitles.length) return;
-        const totalPages = Math.ceil(newsTitles.length / pageSize);
-        if (totalPages <= 1) return;
-        
-        // 简易防抖避免过度触发
-        if (wheelTimeout) return;
-        wheelTimeout = setTimeout(() => { wheelTimeout = null; }, 300);
-        
-        if (e.deltaY > 0 && currentPage < totalPages) {
-            changePage(1);
-        } else if (e.deltaY < 0 && currentPage > 1) {
-            changePage(-1);
-        }
+
+    function updateScrollProgress() {
+        const scrollTop = mainElem.scrollTop;
+        const max = mainElem.scrollHeight - mainElem.clientHeight;
+        const pct = max <= 0 ? 100 : (scrollTop / max) * 100;
+        topProgress.style.width = Math.min(100, Math.max(0, pct)).toFixed(2) + '%';
     }
-    
-    // 错误处理与加载占位清除
-    function showErrorState(message) {
-        if (!newsListContainer) return;
-        newsListContainer.innerHTML = '';
-        const errorDiv = document.createElement('div');
-        errorDiv.className = 'error-placeholder';
-        errorDiv.innerHTML = `
-            <div style="font-size: 2rem; margin-bottom: 0.5rem;">⚠️</div>
-            <strong>加载失败</strong><br>${message}<br>
-            <button id="retryFetch" style="margin-top: 1rem; background: var(--accent-blue); border: none; color: white; padding: 0.5rem 1rem; border-radius: 2rem; cursor: pointer;">点击重试</button>
-        `;
-        newsListContainer.appendChild(errorDiv);
-        const retryBtn = document.getElementById('retryFetch');
-        if (retryBtn) {
-            retryBtn.onclick = () => fetchNewsData();
-        }
-        updatePaginationUI();
-    }
-    
+
+    // ==================== 状态显示 ====================
     function showLoadingState() {
-        if (!newsListContainer) return;
         newsListContainer.innerHTML = '';
-        const loadingDiv = document.createElement('div');
-        loadingDiv.className = 'loading-placeholder';
-        loadingDiv.style.display = 'flex';
-        loadingDiv.style.flexDirection = 'column';
-        loadingDiv.style.alignItems = 'center';
-        loadingDiv.innerHTML = `
-            <div class="spinner"></div>
-            <span>正在获取最新资讯 · 请稍候</span>
-        `;
-        newsListContainer.appendChild(loadingDiv);
+        sentinel.style.display = 'none';
+        stateBox.innerHTML = `
+            <div class="loading-placeholder" style="display:flex;flex-direction:column;align-items:center;">
+                <div class="spinner"></div>
+                <div style="margin-top:1rem;">正在获取最新资讯 · 请稍候</div>
+            </div>`;
     }
-    
-    // 获取新闻主数据
+
+    function showErrorState(message) {
+        newsListContainer.innerHTML = '';
+        sentinel.style.display = 'none';
+        stateBox.innerHTML = `
+            <div class="error-placeholder">
+                <div style="font-size:2rem;margin-bottom:.5rem;">⚠️</div>
+                <strong>加载失败</strong><br>${message}<br>
+                <button id="retryFetch" class="retry-btn">点击重试</button>
+            </div>`;
+        const retryBtn = document.getElementById('retryFetch');
+        if (retryBtn) retryBtn.onclick = () => fetchNewsData();
+        chipText.textContent = '— / —';
+        chipFill.style.width = '0%';
+    }
+
+    // ==================== 获取新闻数据 ====================
     async function fetchNewsData() {
         showLoadingState();
+        allLoaded = false;
+        loadedCount = 0;
+
         try {
             const response = await fetch(apidomain + '/today');
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             const data = await response.json();
+
             if (!data || data.length === 0) {
-                // 依照原逻辑跳转
                 window.location.href = "/topnews";
                 return;
             }
+
             newsTitles = data;
-            currentPage = 1;   // 重置到第一页
-            renderNewsList(newsTitles, apis);
+            stateBox.innerHTML = '';
+            sentinel.style.display = 'flex';
+            sentinel.classList.remove('done');
+            sentinel.innerHTML = `<div class="spinner sm"></div><span>继续下滑，加载更多…</span>`;
+
+            // 首批渲染
+            appendBatch(0, pageSize);
+            updateProgressUI();
+
+            requestAnimationFrame(() => {
+                fillViewport();
+                updateScrollProgress();
+            });
+
+            // 绑定哨兵观察（无限滚动）
+            if (observer) observer.disconnect();
+            observer = new IntersectionObserver((entries) => {
+                if (entries.some(e => e.isIntersecting)) loadMore();
+            }, {
+                root: mainElem,
+                rootMargin: '0px 0px 320px 0px',
+                threshold: 0
+            });
+            observer.observe(sentinel);
+
         } catch (error) {
             console.error('Fetch error:', error);
             showErrorState('网络似乎开小差了，请检查连接后重试');
         }
     }
-    
-    // 停留时间累加 (分钟)
-    let minutesElapsed = 0;
+
+    // ==================== 停留时间累加（分钟） ====================
     function initTimeCounter() {
-        if (timeSpan) {
-            setInterval(() => {
-                minutesElapsed += 1;
-                timeSpan.innerText = minutesElapsed;
-            }, 60000);
-        }
+        if (!timeSpan) return;
+        let minutesElapsed = 0;
+        setInterval(() => {
+            minutesElapsed += 1;
+            timeSpan.innerText = minutesElapsed;
+        }, 60000);
     }
-    
-    // 阻止新闻列表内的滚动事件冒泡导致误翻页 (保留原有体验)
-    function preventScrollBubble() {
-        const mainArea = document.querySelector('main');
-        if (mainArea) {
-            mainArea.addEventListener('wheel', (e) => {
-                // 让main内滚动时不触发全局翻页, 但是当滚动到边界时? 原逻辑stopPropagation会阻止所有，不触发changePage。
-                // 为了体验: 仅当滚动到main的顶部/底部时才允许触发全局翻页？但是原设计是全局wheel直接翻页，为了避免冲突
-                // 不过原代码有监听document，而且newsList阻止冒泡，那就按照原逻辑保证main内部滚动不会翻页，但用户在外区域滚动会翻页？
-                // 原设计是document监听，滚动任意位置都会触发，但是newsList内阻止冒泡导致列表内滚动不翻页，外部滚动才翻页。这里保持一致: 只禁止在main内触发冒泡到document。
-                // 但为了更好的交互: 让main滚动到最底部时, 再向下滚动才触发翻页？但简单维持原有风格：保留原设计（不在main内冒泡）。但很多人会在列表区域滚动，所以只监听main以外的滚轮会更好。
-                // 为了更符合预期，改进: 如果滚动事件来自main内部且未到达边界，不翻页；否则让事件继续传递。但为了不破坏核心且优化体验，我重写滚动逻辑: 
-                // 更加符合直觉：当滚动发生在 main 内部并且滚动条已经到了最底部或者最顶部时再翻页。
-                // 这样用户体验更丝滑。并且防止误触。采用更聪明的滚动边界处理 (提升体验)
-                const target = e.target;
-                const mainElem = document.querySelector('main');
-                if (mainElem && (mainElem.contains(target) || target === mainElem)) {
-                    const scrollTop = mainElem.scrollTop;
-                    const scrollHeight = mainElem.scrollHeight;
-                    const clientHeight = mainElem.clientHeight;
-                    const atBottom = Math.abs(scrollHeight - clientHeight - scrollTop) < 2;
-                    const atTop = scrollTop === 0;
-                    const totalPages = Math.ceil(newsTitles.length / pageSize);
-                    if (e.deltaY > 0 && atBottom && currentPage < totalPages) {
-                        e.preventDefault();
-                        changePage(1);
-                    } else if (e.deltaY < 0 && atTop && currentPage > 1) {
-                        e.preventDefault();
-                        changePage(-1);
-                    }
-                    e.stopPropagation();
-                } else {
-                    // 外部区域滚动时，依旧可以翻页 (使用防抖)
-                    if (wheelTimeout) return;
-                    wheelTimeout = setTimeout(() => { wheelTimeout = null; }, 250);
-                    const totalPages = Math.ceil(newsTitles.length / pageSize);
-                    if (e.deltaY > 0 && currentPage < totalPages) {
-                        changePage(1);
-                    } else if (e.deltaY < 0 && currentPage > 1) {
-                        changePage(-1);
-                    }
-                }
-            });
-        }
-        // 移除旧的document监听，使用更优雅的方式
-        const oldHandler = document.onwheel;
-        document.removeEventListener('wheel', handleWheelNavigation);
-        // 不再需要全局简单监听，用上面的main精确控制
-    }
-    
-    // 滚动提示自动渐隐
-    function initScrollHint() {
-        const hint = document.querySelector('.scroll-hint');
-        if (hint) {
-            setTimeout(() => {
-                hint.style.opacity = '0.2';
-                setTimeout(() => {
-                    if(hint) hint.style.display = 'none';
-                }, 1000);
-            }, 4000);
-        }
-    }
-    
-    // 初始化所有功能
+
+    // ==================== 初始化 ====================
     function init() {
-        bindPaginationEvents();
+        // 滚动进度监听
+        mainElem.addEventListener('scroll', updateScrollProgress, { passive: true });
+        window.addEventListener('resize', updateScrollProgress);
+
         initTimeCounter();
         fetchNewsData();
-        preventScrollBubble();
-        initScrollHint();
-        // 额外保证header过渡类
-        if (headerElem) {
-            headerElem.style.transition = 'opacity 0.4s ease';
-        }
     }
-    
+
     init();
 </script>
 </body>
